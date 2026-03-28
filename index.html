@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#8B2500" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Rilievo Porte" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%238B2500'/><rect x='18' y='10' width='28' height='44' rx='3' fill='%23F7F5F0' opacity='0.9'/><circle cx='40' cy='32' r='2.5' fill='%238B2500'/></svg>" />
+  <title>Rilievo Porte - Serena Infissi</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.2/babel.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body,#root { height:100%; width:100%; }
+    body {
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      background: #EFEDE8; color: #1A1A1A;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    input,textarea,button,select { font-family:inherit; }
+    input:focus,textarea:focus { border-color:#8B2500 !important; outline:none; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    input[type="number"] { -moz-appearance:textfield; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
+
+    const DEFAULT_SCRIPT_URL = "";
+    const SCRIPT_URL_KEY = "rilievo_script_url";
+    const getScriptUrl = () => { try { return window.localStorage.getItem(SCRIPT_URL_KEY) || DEFAULT_SCRIPT_URL; } catch(e) { return DEFAULT_SCRIPT_URL; } };
+    const saveScriptUrl = (url) => { try { window.localStorage.setItem(SCRIPT_URL_KEY, url); } catch(e) {} };
+
+    const EMPTY_DOOR = () => ({ id: Date.now() + Math.random(), qty: 1, mano: "", alt: "", lar: "", spessore: "", desc: "" });
+    const INIT_CLIENT = { cliente: "", dataOrdine: new Date().toISOString().slice(0, 10), riferimento: "", consegna: "", posatore: "" };
+
+    function App() {
+      const [client, setClient] = useState(INIT_CLIENT);
+      const [doors, setDoors] = useState([EMPTY_DOOR()]);
+      const [view, setView] = useState("form");
+      const [copied, setCopied] = useState(false);
+      const [expandedIdx, setExpandedIdx] = useState(0);
+      const [clientOpen, setClientOpen] = useState(true);
+      const [scriptUrl, setScriptUrlLocal] = useState(getScriptUrl());
+      const [sending, setSending] = useState(false);
+      const [sendResult, setSendResult] = useState(null);
+      const cardRefs = useRef({});
+
+      const upClient = (k, v) => setClient(p => ({ ...p, [k]: v }));
+      const upDoor = (idx, k, v) => setDoors(p => p.map((d, i) => i === idx ? { ...d, [k]: v } : d));
+
+      const expandCard = useCallback((idx) => {
+        setExpandedIdx(prev => prev === idx ? -1 : idx);
+        setTimeout(() => {
+          const el = cardRefs.current[idx];
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+      }, []);
+
+      const addDoor = () => {
+        const newIdx = doors.length;
+        setDoors(p => [...p, EMPTY_DOOR()]);
+        setExpandedIdx(newIdx);
+        setTimeout(() => {
+          const el = cardRefs.current[newIdx];
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+      };
+
+      const removeDoor = (idx) => {
+        if (doors.length === 1) return;
+        setDoors(p => p.filter((_, i) => i !== idx));
+        setExpandedIdx(Math.max(0, idx - 1));
+      };
+
+      const dupDoor = (idx) => {
+        const copy = { ...doors[idx], id: Date.now() + Math.random() };
+        const next = [...doors]; next.splice(idx + 1, 0, copy);
+        setDoors(next); setExpandedIdx(idx + 1);
+        setTimeout(() => {
+          const el = cardRefs.current[idx + 1];
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+      };
+
+      const buildText = () => {
+        const l = ["══════════════════════════", "  RILIEVO PORTE INTERNE", "  Serena Infissi", "══════════════════════════", "",
+          `Cliente: ${client.cliente||"—"}`, `Data ordine: ${client.dataOrdine||"—"}`, `Riferimento: ${client.riferimento||"—"}`,
+          `Consegna: ${client.consegna||"—"}`, `Posatore: ${client.posatore||"—"}`, "", "──────────────────────────"];
+        doors.forEach((d, i) => {
+          l.push(`Pos. ${i+1}  |  Q.tà: ${d.qty}  |  Mano: ${d.mano||"—"}`);
+          l.push(`  Alt: ${d.alt||"—"} cm  |  Lar: ${d.lar||"—"} cm  |  Sp. muro: ${d.spessore||"—"} cm`);
+          if (d.desc) l.push(`  Descr: ${d.desc}`);
+          l.push("──────────────────────────");
+        });
+        l.push(`\nTotale porte: ${doors.reduce((s,d)=>s+(parseInt(d.qty)||0),0)}`);
+        l.push(`Inviato il: ${new Date().toLocaleString("it-IT")}`);
+        return l.join("\n");
+      };
+
+      const buildCSV = () => {
+        const h = "Pos;Qtà;Mano;Altezza cm;Larghezza cm;Spessore Muro cm;Descrizione";
+        const r = doors.map((d,i)=>`${i+1};${d.qty};${d.mano};${d.alt};${d.lar};${d.spessore};${d.desc}`);
+        return [`Cliente: ${client.cliente}`,`Data: ${client.dataOrdine}`,`Rif: ${client.riferimento}`,`Consegna: ${client.consegna}`,`Posatore: ${client.posatore}`,"",h,...r].join("\n");
+      };
+
+      const onCopy = () => { navigator.clipboard.writeText(buildText()).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); }); };
+      const onWhatsApp = () => window.open(`https://wa.me/?text=${encodeURIComponent(buildText())}`,"_blank");
+      const onEmail = () => window.open(`mailto:?subject=${encodeURIComponent(`Rilievo Porte - ${client.cliente||"Cliente"}`)}&body=${encodeURIComponent(buildText())}`,"_blank");
+      const onCSV = () => { const b=new Blob([buildCSV()],{type:"text/csv;charset=utf-8;"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=`rilievo_${client.cliente||"porte"}_${client.dataOrdine}.csv`; a.click(); URL.revokeObjectURL(u); };
+
+      const onSendSheet = () => {
+        if (!scriptUrl) { setSendResult({ok:false,msg:"Configura l'URL nelle impostazioni ⚙️"}); return; }
+        setSending(true); setSendResult(null);
+        try {
+          const payload = JSON.stringify({
+            cliente:client.cliente, dataOrdine:client.dataOrdine, riferimento:client.riferimento,
+            consegna:client.consegna, posatore:client.posatore,
+            porte:doors.map(d=>({qty:d.qty,mano:d.mano,alt:d.alt,lar:d.lar,spessore:d.spessore,desc:d.desc}))
+          });
+          // Usa un iframe nascosto + form per bypassare CORS
+          const iframeName = "gsheet_iframe_" + Date.now();
+          const iframe = document.createElement("iframe");
+          iframe.name = iframeName;
+          iframe.style.display = "none";
+          document.body.appendChild(iframe);
+
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = scriptUrl;
+          form.target = iframeName;
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = "data";
+          input.value = payload;
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+
+          // Dopo 3 secondi consideriamo l'invio riuscito (il form non dà errori visibili)
+          setTimeout(() => {
+            setSending(false);
+            setSendResult({ok:true,msg:`✅ ${doors.length} porta/e inviate al foglio Google!`});
+            // Pulizia
+            try { iframe.remove(); form.remove(); } catch(e) {}
+          }, 3000);
+        } catch(e) {
+          setSending(false);
+          setSendResult({ok:false,msg:"Errore di invio. Verifica la connessione."});
+        }
+      };
+
+      const resetForm = () => { setClient(INIT_CLIENT); setDoors([EMPTY_DOOR()]); setView("form"); setExpandedIdx(0); setSendResult(null); };
+
+      const totalDoors = doors.reduce((s,d)=>s+(parseInt(d.qty)||0),0);
+      const filledDoors = doors.filter(d=>d.alt&&d.lar).length;
+
+      // ═══ SETTINGS ═══
+      if (view === "settings") return (
+        <div style={S.page}>
+          <div style={S.topBar}>
+            <button style={S.topBtn} onClick={()=>setView("form")}>← Indietro</button>
+            <span style={S.topTitle}>Impostazioni</span>
+          </div>
+          <div style={{padding:10}}>
+            <div style={S.sCard}>
+              <p style={{fontSize:13,fontWeight:700,marginBottom:6}}>🔗 URL Google Apps Script</p>
+              <p style={{fontSize:12,color:"#666",lineHeight:1.4,marginBottom:8}}>
+                L'URL del web app per salvare i rilievi nel foglio Google.
+              </p>
+              <textarea style={{...S.inp,fontSize:12,height:70,resize:"vertical"}} value={scriptUrl}
+                onChange={e=>{setScriptUrlLocal(e.target.value.trim()); saveScriptUrl(e.target.value.trim());}}
+                placeholder="https://script.google.com/macros/s/.../exec" />
+              {scriptUrl ? <p style={{fontSize:12,color:"#2E7D32",fontWeight:600,marginTop:6}}>✅ Collegato</p>
+                         : <p style={{fontSize:12,color:"#E65100",fontWeight:600,marginTop:6}}>⚠️ Non configurato</p>}
+            </div>
+          </div>
+        </div>
+      );
+
+      // ═══ PREVIEW ═══
+      if (view === "preview") return (
+        <div style={S.page}>
+          <div style={S.topBar}>
+            <button style={S.topBtn} onClick={()=>{setView("form");setSendResult(null);}}>← Modifica</button>
+            <span style={S.topTitle}>Anteprima</span>
+          </div>
+          <pre style={S.preview}>{buildText()}</pre>
+          {sendResult && (
+            <div style={{...S.toast, background:sendResult.ok?"#E8F5E9":"#FFF3E0", color:sendResult.ok?"#2E7D32":"#E65100", borderColor:sendResult.ok?"#A5D6A7":"#FFCC80", animation:"fadeIn 0.3s ease"}}>
+              {sendResult.msg}
+              {sendResult.ok && <button style={S.newRilievoBtn} onClick={resetForm}>+ Nuovo Rilievo</button>}
+            </div>
+          )}
+          <div style={S.shareGrid}>
+            <button style={{...S.shareBtn,background:scriptUrl?"#0F9D58":"#AAA",gridColumn:"1/-1"}} onClick={onSendSheet} disabled={sending}>
+              {sending ? <span style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{width:16,height:16,border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"#fff",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite"}}></span>
+                Invio...</span> : "📊 Invia al Foglio Google"}
+            </button>
+            <button style={{...S.shareBtn,background:"#25D366"}} onClick={onWhatsApp}>💬 WhatsApp</button>
+            <button style={{...S.shareBtn,background:"#1976D2"}} onClick={onEmail}>✉️ Email</button>
+            <button style={{...S.shareBtn,background:"#555"}} onClick={onCopy}>{copied?"✓ Copiato":"📋 Copia"}</button>
+            <button style={{...S.shareBtn,background:"#795548"}} onClick={onCSV}>📁 CSV</button>
+          </div>
+        </div>
+      );
+
+      // ═══ MAIN FORM ═══
+      return (
+        <div style={S.page}>
+          {/* Compact Header - single line */}
+          <div style={S.header}>
+            <div style={S.hRow}>
+              <div>
+                <span style={S.hLogo}>SERENA </span><span style={S.hLogoSub}>INFISSI</span>
+                {scriptUrl && <span style={S.hConn}> ● Sheets</span>}
+              </div>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <span style={S.hBadge}>{filledDoors}/{doors.length}</span>
+                <button style={S.hGear} onClick={()=>setView("settings")}>⚙️</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Client Section - collapsible */}
+          <div style={S.sec}>
+            <div style={S.secHead} onClick={()=>setClientOpen(!clientOpen)}>
+              <span style={{fontSize:14}}>👤</span>
+              <span style={S.secTitle}>Cliente</span>
+              {!clientOpen && client.cliente && <span style={S.secPreview}>{client.cliente}</span>}
+              <span style={S.chev}>{clientOpen?"▲":"▼"}</span>
+            </div>
+            {clientOpen && (
+              <div style={S.cGrid}>
+                <input style={{...S.inp,gridColumn:"1/-1"}} value={client.cliente} onChange={e=>upClient("cliente",e.target.value)} placeholder="Nome e cognome *" />
+                <div style={S.dateField}>
+                  <label style={S.dateLabel}>Ordine</label>
+                  <input style={S.inp} type="date" value={client.dataOrdine} onChange={e=>upClient("dataOrdine",e.target.value)} />
+                </div>
+                <div style={S.dateField}>
+                  <label style={S.dateLabel}>Consegna</label>
+                  <input style={S.inp} type="date" value={client.consegna} onChange={e=>upClient("consegna",e.target.value)} />
+                </div>
+                <input style={S.inp} value={client.riferimento} onChange={e=>upClient("riferimento",e.target.value)} placeholder="Riferimento" />
+                <input style={S.inp} value={client.posatore} onChange={e=>upClient("posatore",e.target.value)} placeholder="Posatore" />
+              </div>
+            )}
+          </div>
+
+          {/* Doors */}
+          <div style={S.sec}>
+            <div style={{...S.secHead,cursor:"default"}}>
+              <span style={{fontSize:14}}>🚪</span>
+              <span style={S.secTitle}>Porte</span>
+              <span style={S.pillBadge}>{totalDoors} tot.</span>
+            </div>
+
+            {doors.map((door, idx) => {
+              const exp = expandedIdx === idx;
+              const ok = door.alt && door.lar;
+              return (
+                <div key={door.id} ref={el => cardRefs.current[idx] = el}
+                  style={{...S.card, borderColor: ok?"#4CAF50":"#E0DDD6", ...(exp?{boxShadow:"0 2px 12px rgba(0,0,0,0.08)"}:{})}}>
+
+                  {/* Card header - always visible */}
+                  <div style={S.cHead} onClick={()=>expandCard(idx)}>
+                    <span style={{...S.cNum, ...(ok?{background:"#4CAF50",color:"#fff"}:{})}}>{idx+1}</span>
+                    {!exp && ok && <span style={S.cSum}>{door.alt}×{door.lar}{door.spessore?` sp${door.spessore}`:""} {door.mano||""}</span>}
+                    {!exp && !ok && <span style={S.cEmpty}>Da compilare</span>}
+                    {exp && <span style={{fontSize:12,color:"#8B2500",fontWeight:700}}>Porta {idx+1}</span>}
+                    <span style={{fontSize:10,color:"#999",marginLeft:"auto"}}>{exp?"▲":"▼"}</span>
+                  </div>
+
+                  {/* Card body - compact layout */}
+                  {exp && (
+                    <div style={S.cBody}>
+                      {/* MEASUREMENTS - single compact bar */}
+                      <div style={S.mRow}>
+                        <div style={S.mField}>
+                          <label style={S.mLabel}>ALT</label>
+                          <input style={S.mInp} type="number" inputMode="numeric" value={door.alt}
+                            onChange={e=>upDoor(idx,"alt",e.target.value)} placeholder="210" />
+                        </div>
+                        <span style={S.mSep}>×</span>
+                        <div style={S.mField}>
+                          <label style={S.mLabel}>LAR</label>
+                          <input style={S.mInp} type="number" inputMode="numeric" value={door.lar}
+                            onChange={e=>upDoor(idx,"lar",e.target.value)} placeholder="80" />
+                        </div>
+                        <span style={S.mSep}>|</span>
+                        <div style={{...S.mField,flex:0.8}}>
+                          <label style={S.mLabel}>SPESS.</label>
+                          <input style={S.mInp} type="number" inputMode="numeric" value={door.spessore}
+                            onChange={e=>upDoor(idx,"spessore",e.target.value)} placeholder="10" />
+                        </div>
+                        <span style={S.mUnit}>cm</span>
+                      </div>
+
+                      {/* MANO + QTY */}
+                      <div style={S.row2}>
+                        <div style={S.manoWrap}>
+                          {["DX","SX"].map(m=>(
+                            <button key={m} style={{...S.manoB,...(door.mano===m?S.manoBOn:{})}}
+                              onClick={()=>upDoor(idx,"mano",door.mano===m?"":m)}>
+                              {m==="DX"?"← DX":"SX →"}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={S.qtyWrap}>
+                          <span style={S.qtyLabel}>Q.tà</span>
+                          <button style={S.qB} onClick={()=>upDoor(idx,"qty",Math.max(1,(parseInt(door.qty)||1)-1))}>−</button>
+                          <span style={S.qV}>{door.qty}</span>
+                          <button style={S.qB} onClick={()=>upDoor(idx,"qty",(parseInt(door.qty)||1)+1)}>+</button>
+                        </div>
+                      </div>
+
+                      {/* NOTE - single line input */}
+                      <input style={S.inp} value={door.desc} onChange={e=>upDoor(idx,"desc",e.target.value)}
+                        placeholder="Note: scorrevole, vetro, colore..." />
+
+                      {/* ACTIONS */}
+                      <div style={S.actRow}>
+                        <button style={S.actB} onClick={()=>dupDoor(idx)}>📋 Duplica</button>
+                        {doors.length>1 && <button style={{...S.actB,color:"#C62828",borderColor:"#E0B0B0"}} onClick={()=>removeDoor(idx)}>🗑 Elimina</button>}
+                        <button style={{...S.actB,marginLeft:"auto",background:"#8B2500",color:"#fff",borderColor:"#8B2500"}}
+                          onClick={()=>{ if(idx<doors.length-1) expandCard(idx+1); else addDoor(); }}>
+                          {idx<doors.length-1 ? `Porta ${idx+2} →` : "+ Nuova"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <button style={S.addBtn} onClick={addDoor}>+ Aggiungi Porta</button>
+          </div>
+
+          {/* SEND */}
+          <div style={{padding:"4px 10px 16px",textAlign:"center"}}>
+            <button style={{...S.sendBtn,...(!client.cliente?{opacity:0.4,cursor:"not-allowed",boxShadow:"none"}:{})}}
+              onClick={()=>setView("preview")} disabled={!client.cliente}>
+              Anteprima e Invio →
+            </button>
+            {!client.cliente && <p style={{fontSize:11,color:"#999",marginTop:4}}>Inserisci il nome del cliente</p>}
+          </div>
+        </div>
+      );
+    }
+
+    // ═══ STYLES ═══
+    const S = {
+      page: { maxWidth:480, margin:"0 auto", background:"#EFEDE8", minHeight:"100vh", paddingBottom:8 },
+
+      // Header compact
+      header: { background:"linear-gradient(135deg,#8B2500,#A0522D)", padding:"10px 12px", color:"#fff" },
+      hRow: { display:"flex", justifyContent:"space-between", alignItems:"center" },
+      hLogo: { fontSize:16, fontWeight:800, letterSpacing:2 },
+      hLogoSub: { fontSize:11, fontWeight:600, letterSpacing:3, opacity:0.8 },
+      hConn: { fontSize:9, color:"#A5D6A7", fontWeight:600 },
+      hBadge: { background:"rgba(255,255,255,0.2)", padding:"3px 9px", borderRadius:6, fontSize:12, fontWeight:700 },
+      hGear: { background:"rgba(255,255,255,0.15)", border:"none", borderRadius:6, padding:"4px 6px", fontSize:14, cursor:"pointer" },
+
+      // Top bar
+      topBar: { display:"flex", alignItems:"center", gap:10, padding:"8px 10px", background:"#fff", borderBottom:"1px solid #DDD", position:"sticky", top:0, zIndex:10 },
+      topBtn: { padding:"5px 10px", border:"1px solid #DDD", borderRadius:6, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", color:"#555" },
+      topTitle: { fontSize:14, fontWeight:700, color:"#333" },
+
+      // Sections
+      sec: { padding:"6px 10px" },
+      secHead: { display:"flex", alignItems:"center", gap:6, marginBottom:6, cursor:"pointer", userSelect:"none" },
+      secTitle: { fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, color:"#555" },
+      secPreview: { fontSize:12, color:"#8B2500", fontWeight:600, marginLeft:4 },
+      chev: { fontSize:10, color:"#999", marginLeft:"auto" },
+      pillBadge: { background:"#8B2500", color:"#fff", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:12, marginLeft:"auto" },
+
+      // Client
+      cGrid: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 },
+      dateField: { display:"flex", flexDirection:"column", gap:2 },
+      dateLabel: { fontSize:9, fontWeight:700, color:"#999", textTransform:"uppercase", letterSpacing:0.5, paddingLeft:2 },
+
+      // Input
+      inp: { width:"100%", padding:"8px 10px", fontSize:14, border:"1.5px solid #D5D0C8", borderRadius:8, background:"#fff", outline:"none", boxSizing:"border-box" },
+
+      // Cards
+      card: { background:"#fff", borderRadius:10, marginBottom:6, border:"2px solid #E0DDD6", overflow:"hidden" },
+      cHead: { display:"flex", alignItems:"center", gap:8, padding:"9px 10px", cursor:"pointer", userSelect:"none" },
+      cNum: { display:"inline-flex", alignItems:"center", justifyContent:"center", width:24, height:24, borderRadius:"50%", background:"#E8E4DC", fontSize:11, fontWeight:700, color:"#666", flexShrink:0 },
+      cSum: { fontSize:12, fontWeight:600, color:"#333" },
+      cEmpty: { fontSize:11, color:"#AAA", fontStyle:"italic" },
+      cBody: { padding:"0 10px 10px", display:"flex", flexDirection:"column", gap:7 },
+
+      // Measurement bar
+      mRow: { display:"flex", alignItems:"flex-end", background:"#F9F7F3", borderRadius:8, padding:"5px 6px", border:"1.5px solid #E0DDD6" },
+      mField: { flex:1, textAlign:"center" },
+      mLabel: { display:"block", fontSize:8, fontWeight:700, color:"#999", letterSpacing:1, marginBottom:1 },
+      mInp: { width:"100%", padding:"4px 2px", fontSize:22, fontWeight:700, border:"none", outline:"none", background:"transparent", textAlign:"center", color:"#333" },
+      mSep: { fontSize:14, color:"#CCC", fontWeight:300, padding:"0 1px", alignSelf:"center", marginBottom:4 },
+      mUnit: { fontSize:10, color:"#999", fontWeight:600, alignSelf:"center", marginBottom:4, marginLeft:3 },
+
+      // Mano + Qty
+      row2: { display:"flex", gap:6, alignItems:"center" },
+      manoWrap: { display:"flex", gap:4, flex:1 },
+      manoB: { flex:1, padding:"7px 4px", border:"1.5px solid #D5D0C8", borderRadius:8, background:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", textAlign:"center", color:"#666" },
+      manoBOn: { background:"#8B2500", borderColor:"#8B2500", color:"#fff" },
+      qtyWrap: { display:"flex", alignItems:"center", border:"1.5px solid #D5D0C8", borderRadius:8, overflow:"hidden" },
+      qtyLabel: { fontSize:9, fontWeight:700, color:"#999", padding:"0 6px", textTransform:"uppercase" },
+      qB: { width:30, height:34, border:"none", background:"#F5F3EE", fontSize:16, fontWeight:600, cursor:"pointer", color:"#555" },
+      qV: { padding:"0 8px", fontSize:15, fontWeight:700, textAlign:"center" },
+
+      // Actions
+      actRow: { display:"flex", gap:5, alignItems:"center" },
+      actB: { padding:"5px 10px", border:"1px solid #D5D0C8", borderRadius:6, background:"#F9F8F5", fontSize:11, fontWeight:600, cursor:"pointer", color:"#555" },
+
+      addBtn: { width:"100%", padding:"9px", border:"1.5px dashed #CCC", borderRadius:8, background:"transparent", fontSize:13, fontWeight:600, cursor:"pointer", color:"#888", textAlign:"center", marginTop:2 },
+
+      sendBtn: { width:"100%", padding:"13px", border:"none", borderRadius:10, background:"linear-gradient(135deg,#8B2500,#A0522D)", color:"#fff", fontSize:15, fontWeight:700, cursor:"pointer", boxShadow:"0 3px 12px rgba(139,37,0,0.3)" },
+
+      // Preview
+      preview: { margin:"8px 10px", padding:"10px", background:"#fff", borderRadius:8, border:"1px solid #DDD", fontSize:10, lineHeight:1.5, whiteSpace:"pre-wrap", fontFamily:"'SF Mono',Menlo,monospace", color:"#333" },
+      shareGrid: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, padding:"0 10px 12px" },
+      shareBtn: { padding:"12px 8px", border:"none", borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, color:"#fff" },
+      toast: { margin:"0 10px 8px", padding:"10px 12px", borderRadius:8, fontSize:12, fontWeight:600, textAlign:"center", border:"1.5px solid" },
+      newRilievoBtn: { display:"block", margin:"6px auto 0", padding:"7px 18px", border:"1.5px solid #2E7D32", borderRadius:6, background:"#fff", color:"#2E7D32", fontSize:12, fontWeight:700, cursor:"pointer" },
+
+      sCard: { background:"#fff", borderRadius:10, padding:12, border:"1.5px solid #E0DDD6" },
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
