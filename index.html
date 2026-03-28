@@ -114,10 +114,51 @@
     .phone-screen {
       width:100%; height:100%; border-radius:26px; overflow:hidden;
       background:#EFEDE8;
+      padding: 28px 8px 8px;
+      display: flex; flex-direction: column;
     }
-    .phone-screen iframe {
-      width:100%; height:100%; border:none; border-radius:26px;
-      pointer-events: none;
+    .mock-header {
+      background: linear-gradient(135deg,#8B2500,#A0522D);
+      padding: 8px 10px; border-radius: 8px 8px 0 0; color:#fff;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .mock-logo { font-size:10px; font-weight:800; letter-spacing:1px; }
+    .mock-badge { background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px; font-size:8px; font-weight:700; }
+    .mock-section { padding:6px 8px; }
+    .mock-label { font-size:7px; font-weight:700; color:#999; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+    .mock-input {
+      background:#fff; border:1px solid #DDD; border-radius:5px;
+      padding:5px 6px; font-size:8px; color:#999; margin-bottom:4px; width:100%;
+    }
+    .mock-row { display:flex; gap:4px; }
+    .mock-card {
+      background:#fff; border:2px solid #4CAF50; border-radius:8px;
+      padding:6px 8px; margin-bottom:4px;
+    }
+    .mock-card-head { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+    .mock-num {
+      width:16px; height:16px; border-radius:50%; background:#4CAF50;
+      color:#fff; font-size:7px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .mock-meas {
+      background:#F9F7F3; border:1px solid #E0DDD6; border-radius:5px;
+      padding:4px; display:flex; align-items:center; justify-content:center; gap:2px;
+    }
+    .mock-meas-val { font-size:14px; font-weight:800; color:#333; text-align:center; }
+    .mock-meas-lbl { font-size:6px; font-weight:700; color:#999; text-align:center; display:block; }
+    .mock-meas-sep { font-size:10px; color:#CCC; }
+    .mock-mano { display:flex; gap:3px; margin-top:4px; }
+    .mock-mano-btn {
+      flex:1; padding:4px; border:1px solid #DDD; border-radius:4px;
+      font-size:7px; font-weight:600; text-align:center; color:#666; background:#fff;
+    }
+    .mock-mano-active { background:#8B2500; color:#fff; border-color:#8B2500; }
+    .mock-send {
+      background: linear-gradient(135deg,#8B2500,#A0522D);
+      color:#fff; border:none; border-radius:6px;
+      padding:7px; font-size:9px; font-weight:700; width:100%;
+      text-align:center; margin-top:auto;
     }
 
     /* ── FEATURES ── */
@@ -258,7 +299,59 @@
         <div class="phone-frame">
           <div class="phone-notch"></div>
           <div class="phone-screen">
-            <iframe src="demo/" title="App Preview" loading="lazy"></iframe>
+            <!-- Static app mockup -->
+            <div class="mock-header">
+              <span class="mock-logo">SERENA INFISSI</span>
+              <span class="mock-badge">3/4</span>
+            </div>
+            <div class="mock-section">
+              <div class="mock-label">👤 Cliente</div>
+              <div class="mock-input">Cocco Francesca</div>
+              <div class="mock-row">
+                <div class="mock-input">28/03/2026</div>
+                <div class="mock-input">Rif. 4521</div>
+              </div>
+            </div>
+            <div class="mock-section" style="flex:1">
+              <div class="mock-label">🚪 Porte <span style="background:#8B2500;color:#fff;padding:1px 5px;border-radius:8px;font-size:6px;margin-left:4px">4 tot.</span></div>
+              <div class="mock-card">
+                <div class="mock-card-head">
+                  <span class="mock-num">1</span>
+                  <span style="font-size:8px;font-weight:700;color:#8B2500">Porta 1</span>
+                </div>
+                <div class="mock-meas">
+                  <div style="flex:1"><span class="mock-meas-lbl">ALT</span><span class="mock-meas-val">210</span></div>
+                  <span class="mock-meas-sep">×</span>
+                  <div style="flex:1"><span class="mock-meas-lbl">LAR</span><span class="mock-meas-val">80</span></div>
+                  <span class="mock-meas-sep">|</span>
+                  <div style="flex:0.8"><span class="mock-meas-lbl">SP.</span><span class="mock-meas-val">10</span></div>
+                  <span style="font-size:7px;color:#999;font-weight:600">cm</span>
+                </div>
+                <div class="mock-mano">
+                  <div class="mock-mano-btn mock-mano-active">← DX</div>
+                  <div class="mock-mano-btn">SX →</div>
+                </div>
+              </div>
+              <div style="background:#fff;border:2px solid #4CAF50;border-radius:8px;padding:6px 8px;margin-bottom:4px">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span class="mock-num">2</span>
+                  <span style="font-size:8px;font-weight:600;color:#333">210×90 sp12 SX</span>
+                </div>
+              </div>
+              <div style="background:#fff;border:2px solid #4CAF50;border-radius:8px;padding:6px 8px;margin-bottom:4px">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span class="mock-num">3</span>
+                  <span style="font-size:8px;font-weight:600;color:#333">210×70 sp10 DX</span>
+                </div>
+              </div>
+              <div style="background:#fff;border:2px solid #E0DDD6;border-radius:8px;padding:6px 8px">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:16px;height:16px;border-radius:50%;background:#E8E4DC;font-size:7px;font-weight:700;color:#666;display:flex;align-items:center;justify-content:center">4</span>
+                  <span style="font-size:8px;color:#AAA;font-style:italic">Da compilare</span>
+                </div>
+              </div>
+            </div>
+            <div class="mock-send">Anteprima e Invio →</div>
           </div>
         </div>
       </div>
